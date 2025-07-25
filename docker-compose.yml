@@ -1,58 +1,55 @@
+version: '3.8'
+
 services:
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.10
+    restart: unless-stopped
     command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.email=chhotu22@navgurukul.org"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - --configFile=/etc/traefik/traefik.yml
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"  # Traefik dashboard (optional)
+      - "8080:8080"     # Traefik dashboard
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./letsencrypt:/letsencrypt"
-    networks:
-      - lti-net
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - traefik-letsencrypt:/letsencrypt
 
   mongodb:
-    image: mongo:6.0
-    container_name: lti-mongodb
+    image: mongo:5
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
-      MONGO_INITDB_DATABASE: ${DB_NAME}
-    ports:
-      - "27017:27017"
     volumes:
-      - lti-mongo-data:/data/db
-    networks:
-      - lti-net
+      - mongo-data:/data/db
 
-  lti-node:
+  lti-provider:
     build: .
-    container_name: lti-node
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      LTI_KEY: ${LTI_KEY}
+      DB_HOST: mongodb
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      PORT: 3000
+    depends_on:
+      - mongodb
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.lti.rule=Host(`lti.csbasics.in`)"
       - "traefik.http.routers.lti.entrypoints=websecure"
+      - "traefik.http.routers.lti.tls=true"
       - "traefik.http.routers.lti.tls.certresolver=letsencrypt"
       - "traefik.http.services.lti.loadbalancer.server.port=3000"
-    depends_on:
-      - mongodb
-    networks:
-      - lti-net
+      
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.lti-http.rule=Host(`lti.csbasics.in`)"
+      - "traefik.http.routers.lti-http.entrypoints=web"
+      - "traefik.http.routers.lti-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 volumes:
-  lti-mongo-data:
-
-networks:
-  lti-net:
+  mongo-data:
+  traefik-letsencrypt:
