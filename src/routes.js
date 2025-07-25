@@ -58,7 +58,7 @@ router.get('/members', async (req, res) => {
   }
 })
 
-// Deep linking route
+// Deep linking route (POST for deep linking response)
 router.post('/deeplink', async (req, res) => {
   try {
     const resource = req.body
@@ -79,6 +79,24 @@ router.post('/deeplink', async (req, res) => {
     console.log(err.message)
     return res.status(500).send(err.message)
   }
+})
+
+// Deep linking route (GET for resource selection UI)
+router.get('/deeplink', async (req, res) => {
+  // Simple HTML form for demo purposes
+  res.send(`
+    <html>
+      <head><title>Deep Linking Resource Selection</title></head>
+      <body>
+        <h2>Select a resource to return to your LMS</h2>
+        <form method="post" action="/deeplink">
+          <label>Resource Name: <input name="name" value="Demo Resource" /></label><br/>
+          <label>Resource Value: <input name="value" value="demo-value" /></label><br/>
+          <button type="submit">Submit</button>
+        </form>
+      </body>
+    </html>
+  `)
 })
 
 // Return available deep linking resources

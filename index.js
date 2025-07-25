@@ -15,17 +15,17 @@ lti.setup(process.env.LTI_KEY,
   {
     staticPath: path.join(__dirname, './public'),
     cookies: {
-      secure: false,      // Change to true if using https in production
-      sameSite: ''        // Set to 'None' with secure=true if cross-domain + https
+      secure: true,      // Use true for HTTPS in production
+      sameSite: 'None'   // 'None' required for cross-domain cookies with secure=true
     },
-    devMode: true,
+    devMode: false,      // Set to false for production
     dynRegRoute: '/register',
     dynReg: {
-      url: 'http://lti.csbasics.in',    // Your LTI Tool URL (domain must match Traefik)
+      url: 'https://lti.csbasics.in',    // Use HTTPS for LTI Tool URL
       name: 'CSBasics LTI Tool',
-      logo: 'http://lti.csbasics.in/assets/logo.svg', // Update your logo URL
+      logo: 'https://lti.csbasics.in/assets/logo.svg', // Use HTTPS for logo URL
       description: 'CSBasics LTI Tool Provider',
-      redirectUris: ['http://lti.csbasics.in/launch'],
+      redirectUris: ['https://lti.csbasics.in/launch'], // Use HTTPS for redirectUris
       customParameters: { exampleParam: 'exampleValue' },
       autoActivate: false
     }
